@@ -18,11 +18,11 @@ ImageFormat parseImageFormat(std::string format_name) {
 }
 
 int main(int argc, char *argv[]) {
-
     std::string input_filename, output_filename;
     std::string input_format_name, output_format_name;
     int upsample_coefficient = 0, downsample_coefficient = 0;
-    bool grayscale = false, compare_results = false, compare_images = false;
+    bool grayscale = false, compare_results = false, compare_images = false,
+         ignore_dimensions = false;
     std::string compare_filename1, compare_filename2;
     int width = 0, height = 0;
     for (int i = 0; i < argc; i++) {
@@ -97,6 +97,8 @@ int main(int argc, char *argv[]) {
             grayscale = true;
         } else if (strcmp(argv[i], "--compare-results") == 0) {
             compare_results = true;
+        } else if (strcmp(argv[i], "--ignore-dimensions") == 0) {
+            ignore_dimensions = true;
         }
     }
 
@@ -114,7 +116,7 @@ int main(int argc, char *argv[]) {
         image2.loadImageFromFile(compare_filename2, format);
 
         try {
-            double mse = MSE(image1, image2);
+            double mse = MSE(image1, image2, ignore_dimensions);
             std::cout << "MSE: " << mse << std::endl;
             std::cout << "PSNR: " << psnr(mse, 255) << std::endl;
         } catch (const std::exception &e) {
@@ -168,7 +170,7 @@ int main(int argc, char *argv[]) {
         }
         if (compare_results) {
             try {
-                double mse = MSE(start_image, image);
+                double mse = MSE(start_image, image, ignore_dimensions);
                 std::cout << "MSE: " << mse << std::endl;
                 std::cout << "PSNR: " << psnr(mse, 255) << std::endl;
             } catch (const std::exception &e) {

@@ -12,9 +12,11 @@ clang++ src/*.cpp -o imageTool -O3
 #### Usage:
 
 ```bash
-imageTool --input *filename* [--width *width*] [--height *height*] --output *filename* --input-format *format* --output-format *format* [--compare-results] [--grayscale] [--downsample *coefficient*] [--upsample *coefficient*]
+./imageTool --input *filename* [--width *width*] [--height *height*] --output *filename* --input-format *format* --output-format *format* [--compare-results] [--grayscale] [--downsample *coefficient*] [--upsample *coefficient*] [--ignore-dimensions]
 ```
+
 or:
+
 ```bash
-imageTool --compare *filename* *filename* --input-format *format*
+./imageTool --compare *filename* *filename* --input-format *format* [--ignore-dimensions]
 ```
