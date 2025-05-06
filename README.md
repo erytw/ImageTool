@@ -5,16 +5,16 @@ Uses MSE and PSNR to compare images.
 
 #### Building:
 
-'''bash
+```bash
 clang++ src/*.cpp -o imageTool -O3
-'''
+```
 
 #### Usage:
 
-'''bash
-imageTool --input *filename* [--width *width*] [--height *height*] --output *filename* --input-format *format* --output-format *format* [--compare-results] [--grayscale]
-'''
+```bash
+imageTool --input *filename* [--width *width*] [--height *height*] --output *filename* --input-format *format* --output-format *format* [--compare-results] [--grayscale] [--downsample *coefficient*] [--upsample *coefficient*]
+```
 or:
-'''bash
+```bash
 imageTool --compare *filename* *filename* --input-format *format*
-'''
+```
