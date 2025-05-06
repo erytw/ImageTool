@@ -186,17 +186,20 @@ void Image::saveImage(FILE *file, ImageFormat format) {
     if (format == ImageFormat::BMP) {
         BMPHeader bmpHeader(width, height);
         BMPInfoHeader bmpInfoHeader(width, height);
-        fwrite(&bmpHeader, sizeof(BMPHeader), 1, file);
-        fwrite(&bmpInfoHeader, sizeof(BMPInfoHeader), 1, file);
+        if (fwrite(&bmpHeader, sizeof(BMPHeader), 1, file) != sizeof(bmpHeader) ||
+            fwrite(&bmpInfoHeader, sizeof(BMPInfoHeader), 1, file) != sizeof(bmpInfoHeader))
+            throw std::runtime_error("Couldn't write to file");
 
+        int padding_size = (4 - (width * sizeof(rgbPixel) & 0b11)) & 0b11;
         std::vector<rgbPixel> rowBuffer(width);
         for (int y = height - 1; y >= 0; --y) {
             for (int x = 0; x < width; ++x) {
                 rowBuffer[x] = pixels[y * width + x];
                 if (is_grayscale) rowBuffer[x].toGrayScale();
             }
-            fwrite(rowBuffer.data(), sizeof(rgbPixel), width, file);
-            fwrite("\0\0\0", 1, (4 - (width * sizeof(rgbPixel) & 0b11)) & 0b11, file);
+            if (fwrite(rowBuffer.data(), sizeof(rgbPixel), width, file) != width * 3 ||
+                fwrite("\0\0\0", 1, padding_size, file) != padding_size)
+                throw std::runtime_error("Couldn't write to file");
         }
         return;
     }
@@ -232,9 +235,10 @@ void Image::saveImage(FILE *file, ImageFormat format) {
         }
     }
 
-    fwrite(yPlane.data(), 1, yPlane.size(), file);
-    fwrite(uPlane.data(), 1, uPlane.size(), file);
-    fwrite(vPlane.data(), 1, vPlane.size(), file);
+    if (fwrite(yPlane.data(), 1, yPlane.size(), file) != yPlane.size() ||
+        fwrite(uPlane.data(), 1, uPlane.size(), file) != uPlane.size() ||
+        fwrite(vPlane.data(), 1, vPlane.size(), file) != vPlane.size())
+        throw std::runtime_error("Couldn't write to file");
 }
 
 void Image::downSample(const int coefficient) noexcept {
