@@ -38,6 +38,8 @@ void rgbPixel::toGrayScale() noexcept {
     r = g = b = y;
 }
 
+void yuvPixel::toGrayScale() noexcept { u = v = 0; }
+
 BMPHeader::BMPHeader(int width, int height) : signature(0x4D42), reserved(0), dataOffset(54) {
     fileSize = sizeof(BMPHeader) + sizeof(BMPInfoHeader) +
                ((width * sizeof(rgbPixel) + 3) & (~3)) * height;
@@ -67,7 +69,12 @@ rgbPixel Image::getPixel(int x, int y) {
 void Image::loadImageFromFile(std::string filename, ImageFormat format) {
     FILE *file = fopen(filename.c_str(), "rb");
     if (!file) throw std::runtime_error("Couldn't open file \"" + filename + "\"");
-    loadImage(file, format);
+    try {
+        loadImage(file, format);
+    } catch (const std::exception &e) {
+        fclose(file);
+        throw e;
+    }
     fclose(file);
 }
 
@@ -166,7 +173,12 @@ void Image::loadImage(FILE *file, ImageFormat format) {
 void Image::saveImageToFile(std::string filename, ImageFormat format) {
     FILE *file = fopen(filename.c_str(), "wb");
     if (!file) throw std::runtime_error("Couldn't open file \"" + filename + "\"");
-    saveImage(file, format);
+    try {
+        saveImage(file, format);
+    } catch (const std::exception &e) {
+        fclose(file);
+        throw e;
+    }
     fclose(file);
 }
 
@@ -176,13 +188,14 @@ void Image::saveImage(FILE *file, ImageFormat format) {
         BMPInfoHeader bmpInfoHeader(width, height);
         fwrite(&bmpHeader, sizeof(BMPHeader), 1, file);
         fwrite(&bmpInfoHeader, sizeof(BMPInfoHeader), 1, file);
+
+        std::vector<rgbPixel> rowBuffer(width);
         for (int y = height - 1; y >= 0; --y) {
             for (int x = 0; x < width; ++x) {
-                rgbPixel pixel = pixels[y * width + x];
-                if (is_grayscale) pixel.toGrayScale();
-                fwrite(&pixel, sizeof(rgbPixel), 1, file);
+                rowBuffer[x] = pixels[y * width + x];
+                if (is_grayscale) rowBuffer[x].toGrayScale();
             }
-            // should write zero bytes so the line length in bytes is a multiple of 4
+            fwrite(rowBuffer.data(), sizeof(rgbPixel), width, file);
             fwrite("\0\0\0", 1, (4 - (width * sizeof(rgbPixel) & 0b11)) & 0b11, file);
         }
         return;
@@ -194,14 +207,16 @@ void Image::saveImage(FILE *file, ImageFormat format) {
     int vertical_step = format == ImageFormat::YUV420P ? 2 : 1;
     int horizontal_step = format == ImageFormat::YUV444P ? 1 : 2;
 
+    std::vector<unsigned char> yPlane(width * height);
+    std::vector<unsigned char> uPlane((width / horizontal_step) * (height / vertical_step));
+    std::vector<unsigned char> vPlane((width / horizontal_step) * (height / vertical_step));
+
     for (int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
             rgbPixel pixel = rgbPixel(pixels[y * width + x]);
             if (is_grayscale) pixel.toGrayScale();
             yuvPixel yuvpixel = yuvPixel(pixel);
-            if (fwrite(&yuvpixel.y, 1, 1, file) != 1) {
-                throw std::runtime_error("Failed to write Y component");
-            }
+            yPlane[y * width + x] = yuvpixel.y;
         }
     }
 
@@ -210,22 +225,16 @@ void Image::saveImage(FILE *file, ImageFormat format) {
             rgbPixel pixel = rgbPixel(pixels[y * width + x]);
             if (is_grayscale) pixel.toGrayScale();
             yuvPixel yuvpixel = yuvPixel(pixel);
-            if (fwrite(&yuvpixel.u, 1, 1, file) != 1) {
-                throw std::runtime_error("Failed to write U component");
-            }
+            uPlane[(y / vertical_step) * (width / horizontal_step) + (x / horizontal_step)] =
+                yuvpixel.u;
+            vPlane[(y / vertical_step) * (width / horizontal_step) + (x / horizontal_step)] =
+                yuvpixel.v;
         }
     }
 
-    for (int y = 0; y < height; y += vertical_step) {
-        for (int x = 0; x < width; x += horizontal_step) {
-            rgbPixel pixel = rgbPixel(pixels[y * width + x]);
-            if (is_grayscale) pixel.toGrayScale();
-            yuvPixel yuvpixel = yuvPixel(pixel);
-            if (fwrite(&yuvpixel.v, 1, 1, file) != 1) {
-                throw std::runtime_error("Failed to write V component");
-            }
-        }
-    }
+    fwrite(yPlane.data(), 1, yPlane.size(), file);
+    fwrite(uPlane.data(), 1, uPlane.size(), file);
+    fwrite(vPlane.data(), 1, vPlane.size(), file);
 }
 
 void Image::downSample(const int coefficient) noexcept {
