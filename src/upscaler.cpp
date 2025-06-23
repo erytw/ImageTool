@@ -2,7 +2,6 @@
 #include <stdexcept>
 
 TraditionalUpscaler::TraditionalUpscaler(UpscaleMethod method) : method(method) {
-#if OPENCV_AVAILABLE
     if (method == UpscaleMethod::BTVL1) {
         try {
             sr_processor = cv::superres::createSuperResolution_BTVL1();
@@ -10,16 +9,9 @@ TraditionalUpscaler::TraditionalUpscaler(UpscaleMethod method) : method(method) 
             throw std::runtime_error("Failed to create BTVL1 processor: " + std::string(e.what()));
         }
     }
-#else
-    sr_processor = nullptr;
-    if (method == UpscaleMethod::BTVL1) {
-        throw std::runtime_error("BTVL1 requires OpenCV support");
-    }
-#endif
 }
 
 void TraditionalUpscaler::upscale(Image &image, int scale_factor) {
-#if OPENCV_AVAILABLE
     cv::Mat input_mat = imageToMat(image);
     cv::Mat output_mat;
 
@@ -35,7 +27,6 @@ void TraditionalUpscaler::upscale(Image &image, int scale_factor) {
         break;
     }
     case UpscaleMethod::BTVL1: {
-        // Fallback to Lanczos if BTVL1 is not working properly
         cv::Size new_size(image.getWidth() * scale_factor, image.getHeight() * scale_factor);
         cv::resize(input_mat, output_mat, new_size, 0, 0, cv::INTER_LANCZOS4);
         break;
@@ -49,16 +40,6 @@ void TraditionalUpscaler::upscale(Image &image, int scale_factor) {
     }
 
     matToImage(output_mat, image);
-#else
-    switch (method) {
-    case UpscaleMethod::BICUBIC:
-    case UpscaleMethod::LANCZOS:
-        image.upSample(scale_factor);
-        break;
-    default:
-        throw std::runtime_error("This upscaling method requires OpenCV support");
-    }
-#endif
 }
 
 std::string TraditionalUpscaler::getName() const {
@@ -74,7 +55,6 @@ std::string TraditionalUpscaler::getName() const {
     }
 }
 
-#if OPENCV_AVAILABLE
 cv::Mat TraditionalUpscaler::imageToMat(const Image &image) {
     cv::Mat mat(image.getHeight(), image.getWidth(), CV_8UC3);
 
@@ -97,28 +77,21 @@ void TraditionalUpscaler::matToImage(const cv::Mat &mat, Image &image) {
     for (int y = 0; y < mat.rows; ++y) {
         for (int x = 0; x < mat.cols; ++x) {
             const cv::Vec3b &mat_pixel = mat.at<cv::Vec3b>(y, x);
-            // Access pixel directly through the private pixels vector
             new_image.pixels[y * mat.cols + x] = rgbPixel(mat_pixel[2], mat_pixel[1], mat_pixel[0]);
         }
     }
 
     image = std::move(new_image);
 }
-#endif
 
 AIUpscaler::AIUpscaler(UpscaleMethod method, const std::string &model_path)
     : method(method), model_loaded(false), model_path(model_path) {
-#if OPENCV_AVAILABLE
     if (!model_path.empty()) {
         model_loaded = loadModel(model_path);
     }
-#else
-    throw std::runtime_error("AI upscaling requires OpenCV support");
-#endif
 }
 
 bool AIUpscaler::loadModel(const std::string &path) {
-#if OPENCV_AVAILABLE
     try {
         sr.readModel(path);
         model_loaded = true;
@@ -129,14 +102,9 @@ bool AIUpscaler::loadModel(const std::string &path) {
         model_loaded = false;
         return false;
     }
-#else
-    (void)path;
-    throw std::runtime_error("AI model loading requires OpenCV support");
-#endif
 }
 
 void AIUpscaler::upscale(Image &image, int scale_factor) {
-#if OPENCV_AVAILABLE
     if (!model_loaded) {
         throw std::runtime_error("AI model not loaded. Please load a model first.");
     }
@@ -156,11 +124,6 @@ void AIUpscaler::upscale(Image &image, int scale_factor) {
     }
 
     matToImage(output_mat, image);
-#else
-    (void)image;
-    (void)scale_factor;
-    throw std::runtime_error("AI upscaling requires OpenCV support");
-#endif
 }
 
 std::string AIUpscaler::getName() const {
@@ -193,7 +156,6 @@ std::string AIUpscaler::getModelName() const {
     }
 }
 
-#if OPENCV_AVAILABLE
 cv::Mat AIUpscaler::imageToMat(const Image &image) {
     cv::Mat mat(image.getHeight(), image.getWidth(), CV_8UC3);
 
@@ -222,9 +184,7 @@ void AIUpscaler::matToImage(const cv::Mat &mat, Image &image) {
 
     image = std::move(new_image);
 }
-#endif
 
-// Factory Implementation
 std::unique_ptr<BaseUpscaler> UpscalerFactory::createUpscaler(UpscaleMethod method,
                                                               const std::string &model_path) {
     switch (method) {
@@ -245,13 +205,9 @@ std::unique_ptr<BaseUpscaler> UpscalerFactory::createUpscaler(UpscaleMethod meth
 }
 
 std::vector<UpscaleMethod> UpscalerFactory::getAvailableMethods() {
-#if OPENCV_AVAILABLE
     return {UpscaleMethod::BICUBIC, UpscaleMethod::LANCZOS, UpscaleMethod::BTVL1,
             UpscaleMethod::ESPCN,   UpscaleMethod::EDSR,    UpscaleMethod::FSRCNN,
             UpscaleMethod::LAPSRN};
-#else
-    return {UpscaleMethod::BICUBIC, UpscaleMethod::LANCZOS};
-#endif
 }
 
 std::string UpscalerFactory::methodToString(UpscaleMethod method) {

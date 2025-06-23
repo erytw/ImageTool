@@ -3,14 +3,12 @@
 Supports BMP, YUV420P, YUV422P, YUV444P for both input and output.
 Uses MSE and PSNR to compare images.
 Multiple upscaling methods including traditional and AI-based techniques from opencv2.
+Iterative scaling for powers of 2 (k=2^p).
 
 #### Building:
 
 ```bash
-# Basic build (traditional upscaling only)
-clang++ src/main.cpp src/image.cpp src/compare.cpp src/upscaler.cpp -o imageTool -O3 -std=c++17
-
-# With OpenCV
+# Main tool (requires OpenCV)
 clang++ src/main.cpp src/image.cpp src/compare.cpp src/upscaler.cpp -o imageTool -O3 -std=c++17 `pkg-config --cflags --libs opencv4`
 
 # Comparison tool (requires OpenCV)
@@ -29,7 +27,7 @@ or:
 ./imageTool --compare *filename* *filename* --input-format *format* [--ignore-dimensions]
 ```
 
-or upscaling comparison:
+or upscaling comparison (scale_factor must be power of 2):
 
 ```bash
 ./upscale_comparison *input_file* *input_format* *scale_factor* [model_directory]
@@ -38,7 +36,7 @@ or upscaling comparison:
 #### Advanced Upscaling Options:
 
 - `--upscale-method`: Choose upscaling method (BICUBIC, LANCZOS, BTVL1, ESPCN, EDSR, FSRCNN, LAPSRN)
-- `--scale-factor`: Upscaling factor (2, 3, 4, or 8 depending on method)
+- `--scale-factor`: Upscaling factor (powers of 2 for comparison tool)
 - `--model-path`: Path to AI model file (required for AI methods)
 
 #### Examples:
@@ -50,5 +48,6 @@ or upscaling comparison:
 
 ./imageTool --input input.bmp --output output.bmp --input-format BMP --output-format BMP --upscale-method EDSR --scale-factor 4 --model-path models/EDSR_x4.pb --compare-results
 
-./upscale_comparison input.bmp BMP 2 models/
+./upscale_comparison input.bmp BMP 4 models/
+./upscale_comparison input.bmp BMP 8 models/
 ```

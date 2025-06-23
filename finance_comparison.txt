@@ -8,16 +8,14 @@ Saved: output/output_FSRCNN.bmp
 Saved: output/output_EDSR.bmp
 Saved: output/output_LAPSRN.bmp
 
-=== UPSCALING COMPARISON RESULTS ===
-
 Method		Type		MSE		PSNR		Time(s)		Status
 -----------------------------------------------------------------------
-BICUBIC		Algo		429.49		21.80		0.00		OK
-LANCZOS		Algo		430.88		21.79		0.00		OK
-BTVL1		Algo		430.88		21.79		0.00		OK
-ESPCN		AI		426.44		21.83		0.02		OK
-FSRCNN		AI		413.70		21.96		0.03		OK
-EDSR		AI		369.63		22.45		5.90		OK
-LAPSRN		AI		405.32		22.05		0.55		OK
+BICUBIC		Algo		429.707606		21.799073		0.003416		OK
+LANCZOS		Algo		430.753136		21.788519		0.003834		OK
+BTVL1		Algo		430.753136		21.788519		0.004677		OK
+ESPCN		AI		378.815327		22.346528		0.082162		OK
+FSRCNN		AI		377.086573		22.366393		0.124592		OK
+EDSR		AI		320.230751		23.076173		34.512505		OK
+LAPSRN		AI		398.241755		22.129336		0.596204		OK
 
-Comparison complete! Check output_*.bmp files for visual comparison.
+Comparison complete!
