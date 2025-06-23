@@ -1,5 +1,6 @@
 #include "compare.h"
 #include "image.h"
+#include "upscaler.h"
 #include <iostream>
 #include <string>
 
@@ -22,8 +23,10 @@ int main(int argc, char *argv[]) {
     std::string input_format_name, output_format_name;
     int upsample_coefficient = 0, downsample_coefficient = 0;
     bool grayscale = false, compare_results = false, compare_images = false,
-         ignore_dimensions = false;
+         ignore_dimensions = false, use_advanced_upscale = false;
     std::string compare_filename1, compare_filename2;
+    std::string upscale_method_name, model_path;
+    int scale_factor = 2;
     int width = 0, height = 0;
     for (int i = 0; i < argc; i++) {
         if (strcmp(argv[i], "--width") == 0) {
@@ -99,6 +102,29 @@ int main(int argc, char *argv[]) {
             compare_results = true;
         } else if (strcmp(argv[i], "--ignore-dimensions") == 0) {
             ignore_dimensions = true;
+        } else if (strcmp(argv[i], "--upscale-method") == 0) {
+            if (i + 1 >= argc) {
+                std::cerr << "Error: Missing value for --upscale-method" << std::endl;
+                return 1;
+            }
+            upscale_method_name = argv[i + 1];
+            use_advanced_upscale = true;
+        } else if (strcmp(argv[i], "--scale-factor") == 0) {
+            if (i + 1 >= argc) {
+                std::cerr << "Error: Missing value for --scale-factor" << std::endl;
+                return 1;
+            }
+            scale_factor = atoi(argv[i + 1]);
+            if (scale_factor <= 0) {
+                std::cerr << "Error: --scale-factor must be a positive integer" << std::endl;
+                return 1;
+            }
+        } else if (strcmp(argv[i], "--model-path") == 0) {
+            if (i + 1 >= argc) {
+                std::cerr << "Error: Missing value for --model-path" << std::endl;
+                return 1;
+            }
+            model_path = argv[i + 1];
         }
     }
 
@@ -167,6 +193,20 @@ int main(int argc, char *argv[]) {
         }
         if (upsample_coefficient) {
             image.upSample(upsample_coefficient);
+        }
+        if (use_advanced_upscale) {
+            try {
+                UpscaleMethod method = UpscalerFactory::stringToMethod(upscale_method_name);
+                auto upscaler = UpscalerFactory::createUpscaler(method, model_path);
+
+                std::cout << "Using " << upscaler->getName() << " upscaler ("
+                          << (upscaler->isAI() ? "AI" : "Traditional") << ")" << std::endl;
+
+                upscaler->upscale(image, scale_factor);
+            } catch (const std::exception &e) {
+                std::cerr << "Error during advanced upscaling: " << e.what() << std::endl;
+                return 1;
+            }
         }
         if (compare_results) {
             try {

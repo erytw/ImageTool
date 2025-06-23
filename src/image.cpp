@@ -53,9 +53,9 @@ BMPInfoHeader::BMPInfoHeader(int width, int height)
 
 Image::~Image() {}
 
-int Image::getHeight() noexcept { return height; }
+int Image::getHeight() const noexcept { return height; }
 
-int Image::getWidth() noexcept { return width; }
+int Image::getWidth() const noexcept { return width; }
 
 bool Image::isGrayScale() noexcept { return is_grayscale; }
 
@@ -186,8 +186,8 @@ void Image::saveImage(FILE *file, ImageFormat format) {
     if (format == ImageFormat::BMP) {
         BMPHeader bmpHeader(width, height);
         BMPInfoHeader bmpInfoHeader(width, height);
-        if (fwrite(&bmpHeader, sizeof(BMPHeader), 1, file) != sizeof(bmpHeader) ||
-            fwrite(&bmpInfoHeader, sizeof(BMPInfoHeader), 1, file) != sizeof(bmpInfoHeader))
+        if (fwrite(&bmpHeader, sizeof(BMPHeader), 1, file) != 1 ||
+            fwrite(&bmpInfoHeader, sizeof(BMPInfoHeader), 1, file) != 1)
             throw std::runtime_error("Couldn't write to file");
 
         int padding_size = (4 - (width * sizeof(rgbPixel) & 0b11)) & 0b11;
@@ -197,7 +197,7 @@ void Image::saveImage(FILE *file, ImageFormat format) {
                 rowBuffer[x] = pixels[y * width + x];
                 if (is_grayscale) rowBuffer[x].toGrayScale();
             }
-            if (fwrite(rowBuffer.data(), sizeof(rgbPixel), width, file) != width * 3 ||
+            if (fwrite(rowBuffer.data(), sizeof(rgbPixel), width, file) != width ||
                 fwrite("\0\0\0", 1, padding_size, file) != padding_size)
                 throw std::runtime_error("Couldn't write to file");
         }

@@ -1,0 +1,23 @@
+Loaded image: 794x557
+Downsampled to: 198x139
+Saved: output/output_BICUBIC.bmp
+Saved: output/output_LANCZOS.bmp
+Saved: output/output_BTVL1.bmp
+Saved: output/output_ESPCN.bmp
+Saved: output/output_FSRCNN.bmp
+Saved: output/output_EDSR.bmp
+Saved: output/output_LAPSRN.bmp
+
+=== UPSCALING COMPARISON RESULTS ===
+
+Method		Type		MSE		PSNR		Time(s)		Status
+-----------------------------------------------------------------------
+BICUBIC		Algo		80.19		29.09		0.00		OK
+LANCZOS		Algo		74.38		29.42		0.00		OK
+BTVL1		Algo		74.38		29.42		0.00		OK
+ESPCN		AI		92.49		28.47		0.01		OK
+FSRCNN		AI		86.45		28.76		0.02		OK
+EDSR		AI		56.34		30.62		2.42		OK
+LAPSRN		AI		84.28		28.87		0.26		OK
+
+Comparison complete! Check output_*.bmp files for visual comparison.

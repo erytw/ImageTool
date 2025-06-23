@@ -46,13 +46,16 @@ struct yuvPixel {
 enum ImageFormat { BMP = 0, YUV420P = 1, YUV422P = 2, YUV444P = 3 };
 
 class Image {
+    friend class TraditionalUpscaler;
+    friend class AIUpscaler;
+
   public:
     Image(int _width = 0, int _height = 0)
         : width(_width), height(_height), is_grayscale(false), pixels(_width * _height) {}
     ~Image();
 
-    int getWidth() noexcept;
-    int getHeight() noexcept;
+    int getWidth() const noexcept;
+    int getHeight() const noexcept;
     bool isGrayScale() noexcept;
     rgbPixel getPixel(int x, int y);
 
